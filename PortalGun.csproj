@@ -50,7 +50,6 @@
     <Compile Include="ModEntry.cs" />
     <Compile Include="NewPortalLocations.cs" />
     <Compile Include="PortalLocation.cs" />
-    <Compile Include="PortalOverride.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />
   </ItemGroup>
   <ItemGroup>

@@ -47,8 +47,7 @@ namespace CustomPortalLocations
 
         public CustomObjectData portalGun;
 
-        public int BlueAnimationFrame = -1;
-        public int OrangeAnimationFrame = 4;
+        
 
         public override void Entry(IModHelper helper)
         {
@@ -60,31 +59,28 @@ namespace CustomPortalLocations
             Directory.CreateDirectory(
                 $"{this.Helper.DirectoryPath}{Path.DirectorySeparatorChar}Data{Path.DirectorySeparatorChar}");
 
-
-            //GameEvents.EighthUpdateTick += this.InterceptWarps;
             ControlEvents.KeyPressed += this.KeyPressed;
             GameEvents.SecondUpdateTick += GameEvents_SecondUpdateTick;
 
 
         }
 
-        /**
-         * Reads/Creates a warp location save data file after the game loads.
-         **/
+        
         private void AfterLoad(object sender, EventArgs e)
         {
+            // make portalGun object
             Texture2D portalGunTexture = this.Helper.Content.Load<Texture2D>("PortalGun1.png");
 
-            CustomObjectData portalGun = CustomObjectData.newObject("PortalGunId", portalGunTexture, Color.White, "Portal Gun",
+            portalGun = CustomObjectData.newObject("PortalGunId", portalGunTexture, Color.White, "Portal Gun",
                 "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Portal Gun", "388 1"));
-
+            
+            // Reads or Creates a Portal Gun save data file
             LocationSaveFileName =
-                $"{this.Helper.DirectoryPath}{Path.DirectorySeparatorChar}Data{Path.DirectorySeparatorChar}{Constants.SaveFolderName}.json";
+                $"{this.Helper.DirectoryPath}{Path.DirectorySeparatorChar}Data{Path.DirectorySeparatorChar}{Constants.SaveFolderName}portal-gun.json";
 
             if (File.Exists(LocationSaveFileName))
             {
-                PortalLocations = this.Helper.ReadJsonFile<NewPortalLocations>(LocationSaveFileName);
-                //this.ValidatePortalLocations(PortalLocations);
+                PortalLocations = this.Helper.ReadJsonFile<NewPortalLocations>(LocationSaveFileName) ?? new NewPortalLocations();
             }
             else
             {
@@ -93,11 +89,8 @@ namespace CustomPortalLocations
 
             this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
 
+            // get animated portal tilesheet file
             string tileSheetPath = this.Helper.Content.GetActualAssetKey("PortalsAnimated.png", ContentSource.ModFolder);
-
-            // Get an instance of the in-game location you want to patch. For the farm, use Game1.getFarm() instead.
-            //GameLocation location = Game1.getLocationFromName("Town");
-
             foreach (GameLocation location in GetLocations())
             {
                 // Add the tilesheet.
@@ -113,10 +106,9 @@ namespace CustomPortalLocations
 
             }
 
+            // initialize portalLocation array with default items
             PortalLocations.portalLocations[0] = new PortalLocation();
             PortalLocations.portalLocations[1] = new PortalLocation();
-
-
         }
 
         private void GameEvents_UpdateTick(object sender, EventArgs e)
@@ -124,12 +116,14 @@ namespace CustomPortalLocations
             // skip if save not loaded yet
             if (!Context.IsWorldReady)
                 return;
-
-
         }
+
+        public int BlueAnimationFrame = -1;
+        public int OrangeAnimationFrame = 4;
 
         private void GameEvents_SecondUpdateTick(object sender, EventArgs e)
         {
+            // portal animation frames
             if (BlueAnimationFrame > -1)
             {
                 // remove old tile
@@ -166,6 +160,7 @@ namespace CustomPortalLocations
         /**
          * Handles pressed keys in order to save new warp locations.
          **/
+
         private void KeyPressed(object sender, EventArgsKeyPressed e)
         {
             if (!Context.IsWorldReady)
@@ -177,17 +172,12 @@ namespace CustomPortalLocations
                 return;
             }
 
-            if (e.KeyPressed.ToString().ToLower() != this.config.BluePortalSpawnKey.ToLower()
+            /* if (e.KeyPressed.ToString().ToLower() != this.config.BluePortalSpawnKey.ToLower()
                 && e.KeyPressed.ToString().ToLower() != this.config.OrangePortalSpawnKey.ToLower())
-                return;
+                return; */
+                
 
-            /* if (!AllowedPortalLocations.Contains(Game1.currentLocation.Name))
-            {
-                Game1.showGlobalMessage("Your portal gun doesn't seem to work in this location");
-                return;
-            } */
-
-            if (Game1.player.ActiveObject.DisplayName != "Portal Gun")
+            if (Game1.player.CurrentItem.DisplayName != "Portal Gun")
             {
                 return;
             }
@@ -207,18 +197,20 @@ namespace CustomPortalLocations
             // Game1.player
 
 
+
+
             if (e.KeyPressed.ToString().ToLower() == this.config.BluePortalSpawnKey.ToLower())
             {
                 this.SetPortalLocation(0, 1, location);
+                this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+
             }
 
             else if (e.KeyPressed.ToString().ToLower() == this.config.OrangePortalSpawnKey.ToLower())
             {
                 this.SetPortalLocation(1, 0, location);
+                this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
             }
-            //this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations); 
-            //}
-
         }
 
         private void SetPortalLocation(int newIndex, int targetIndex, PortalLocation newLocation)
@@ -240,6 +232,7 @@ namespace CustomPortalLocations
             Layer layer = Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).map.GetLayer("Buildings");
             PortalLocations.OldTiles[newIndex] = layer.Tiles[PortalLocations.portalLocations[newIndex].xCoord, PortalLocations.portalLocations[newIndex].yCoord];
 
+            // pick animation to run
             if (newIndex == 0)
             {
                 BlueAnimationFrame = 0;
@@ -250,8 +243,9 @@ namespace CustomPortalLocations
                 OrangeAnimationFrame = 5;
             }
 
-            Game1.showGlobalMessage("New Blue Portal Location Saved");
+            Game1.showGlobalMessage("New Portal Location Saved");
 
+            // if the other portal exists, set / replace warps
             if (PortalLocations.portalLocations[targetIndex].exists)
             {
                 if (PortalLocations.portalWarpLocations[newIndex] != PortalLocations.portalWarpLocations[2])
