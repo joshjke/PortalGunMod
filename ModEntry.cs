@@ -1,7 +1,6 @@
 ﻿using System;
 using System.Collections.Generic;
 using System.IO;
-//using CustomPortalLocations.PortalOverrides;
 using Microsoft.Xna.Framework;
 
 using xTile;
@@ -14,7 +13,7 @@ using StardewModdingAPI.Events;
 using StardewModdingAPI.Utilities;
 using StardewValley;
 using StardewValley.Tools;
-//using static CustomPortalLocations.PortalOverrides.PortalOverride;
+
 using System.Linq;
 using StardewValley.Locations;
 using Microsoft.Xna.Framework.Graphics;
@@ -55,13 +54,13 @@ namespace CustomPortalLocations
         {
             SaveEvents.AfterLoad += this.AfterLoad;
             GameEvents.UpdateTick += this.GameEvents_UpdateTick;
-            
 
-            this.config = helper.ReadConfig<ModConfig>(); 
+
+            this.config = helper.ReadConfig<ModConfig>();
             Directory.CreateDirectory(
                 $"{this.Helper.DirectoryPath}{Path.DirectorySeparatorChar}Data{Path.DirectorySeparatorChar}");
 
-            
+
             //GameEvents.EighthUpdateTick += this.InterceptWarps;
             ControlEvents.KeyPressed += this.KeyPressed;
             GameEvents.SecondUpdateTick += GameEvents_SecondUpdateTick;
@@ -126,11 +125,11 @@ namespace CustomPortalLocations
             if (!Context.IsWorldReady)
                 return;
 
-            
+
         }
 
         private void GameEvents_SecondUpdateTick(object sender, EventArgs e)
-        { 
+        {
             if (BlueAnimationFrame > -1)
             {
                 // remove old tile
@@ -173,10 +172,10 @@ namespace CustomPortalLocations
                 return;
 
             if (e.KeyPressed.ToString().ToLower() == this.config.SpawnPortalGun.ToLower())
-                {
-                
-                    return;
-                }
+            {
+
+                return;
+            }
 
             if (e.KeyPressed.ToString().ToLower() != this.config.BluePortalSpawnKey.ToLower()
                 && e.KeyPressed.ToString().ToLower() != this.config.OrangePortalSpawnKey.ToLower())
@@ -206,8 +205,8 @@ namespace CustomPortalLocations
             } */
 
             // Game1.player
-            
-                
+
+
             if (e.KeyPressed.ToString().ToLower() == this.config.BluePortalSpawnKey.ToLower())
             {
                 this.SetPortalLocation(0, 1, location);
@@ -222,129 +221,24 @@ namespace CustomPortalLocations
 
         }
 
-        /* private void SetPortalLocation1(bool blue, PortalLocation newLocation)
-        {
-            if (blue)
-            {
-                if (PortalLocations.BluePortalLocation.exists)
-                {
-                    // remove old tile
-                    Game1.getLocationFromName(PortalLocations.BluePortalLocation.locationName).removeTile(PortalLocations.BluePortalLocation.xCoord,
-                        PortalLocations.BluePortalLocation.yCoord, "Buildings");
-
-                    // replace old tile
-                    Layer layerOld = Game1.getLocationFromName(PortalLocations.BluePortalLocation.locationName).map.GetLayer("Buildings");
-                    layerOld.Tiles[PortalLocations.BluePortalLocation.xCoord, PortalLocations.BluePortalLocation.yCoord] = PortalLocations.OldTiles[0];
-                }
-
-                PortalLocations.BluePortalLocation = newLocation;
-
-                // save old tile
-                Layer layer = Game1.getLocationFromName(PortalLocations.BluePortalLocation.locationName).map.GetLayer("Buildings");
-                PortalLocations.OldTiles[0] = layer.Tiles[PortalLocations.BluePortalLocation.xCoord, PortalLocations.BluePortalLocation.yCoord];
-
-                BlueAnimationFrame = 0;
-
-                //layer.Tiles[PortalLocations.BluePortalLocation.xCoord, PortalLocations.BluePortalLocation.yCoord] = new StaticTile(layer, tileSheet, BlendMode.Alpha, 4);
-
-                Game1.showGlobalMessage("New Blue Portal Location Saved");
-
-                if (PortalLocations.OrangePortalLocation.exists)
-                {
-                    if (PortalLocations.portalWarpLocations[0] != PortalLocations.portalWarpLocations[2])
-                    {
-                        Game1.getLocationFromName(PortalLocations.portalWarpLocations[1].TargetName).warps.Remove(PortalLocations.portalWarpLocations[0]);
-                    }
-
-                    PortalLocations.portalWarpLocations[0] = new Warp(PortalLocations.BluePortalLocation.xCoord,
-                        PortalLocations.BluePortalLocation.yCoord, PortalLocations.OrangePortalLocation.locationName,
-                        PortalLocations.OrangePortalLocation.xCoord + 1, PortalLocations.OrangePortalLocation.yCoord, false);
-
-                    Game1.getLocationFromName(PortalLocations.BluePortalLocation.locationName).warps.Add(PortalLocations.portalWarpLocations[0]);
-
-                    if (PortalLocations.portalWarpLocations[1] != PortalLocations.portalWarpLocations[2])
-                    {
-                        Game1.getLocationFromName(PortalLocations.portalWarpLocations[0].TargetName).warps.Remove(PortalLocations.portalWarpLocations[1]);
-                    }
-
-                    PortalLocations.portalWarpLocations[1] = new Warp(PortalLocations.OrangePortalLocation.xCoord,
-                        PortalLocations.OrangePortalLocation.yCoord, PortalLocations.BluePortalLocation.locationName,
-                        PortalLocations.BluePortalLocation.xCoord + 1, PortalLocations.BluePortalLocation.yCoord, false);
-
-                    Game1.getLocationFromName(PortalLocations.OrangePortalLocation.locationName).warps.Add(PortalLocations.portalWarpLocations[1]);
-                }
-                Game1.currentLocation.playSound("debuffSpell");
-            }
-            else
-            {
-                if (PortalLocations.OrangePortalLocation.exists)
-                {
-                    // remove old tile
-                    Game1.getLocationFromName(PortalLocations.OrangePortalLocation.locationName).removeTile(PortalLocations.OrangePortalLocation.xCoord,
-                        PortalLocations.OrangePortalLocation.yCoord, "Buildings");
-
-                    // replace old tile
-                    Layer layerOld = Game1.getLocationFromName(PortalLocations.OrangePortalLocation.locationName).map.GetLayer("Buildings");
-                    layerOld.Tiles[PortalLocations.OrangePortalLocation.xCoord, PortalLocations.OrangePortalLocation.yCoord] = PortalLocations.OldTiles[1];
-                }
-                PortalLocations.OrangePortalLocation = newLocation;
-
-                // save old tile
-                Layer layer = Game1.getLocationFromName(PortalLocations.OrangePortalLocation.locationName).map.GetLayer("Buildings");
-                PortalLocations.OldTiles[1] = layer.Tiles[PortalLocations.OrangePortalLocation.xCoord, PortalLocations.OrangePortalLocation.yCoord];
-
-                OrangeAnimationFrame = 5;
-
-                //layer.Tiles[PortalLocations.OrangePortalLocation.xCoord, PortalLocations.OrangePortalLocation.yCoord] = new StaticTile(layer, tileSheet, BlendMode.Alpha, 9);
-
-                Game1.showGlobalMessage("New Orange Portal Saved");
-
-                if (PortalLocations.OrangePortalLocation.exists)
-                {
-                    if(PortalLocations.portalWarpLocations[1] != PortalLocations.portalWarpLocations[2])
-                    {
-                        Game1.getLocationFromName(PortalLocations.portalWarpLocations[0].TargetName).warps.Remove(PortalLocations.portalWarpLocations[1]);
-                    }
-
-                    PortalLocations.portalWarpLocations[1] = new Warp(PortalLocations.OrangePortalLocation.xCoord,
-                        PortalLocations.OrangePortalLocation.yCoord, PortalLocations.BluePortalLocation.locationName,
-                        PortalLocations.BluePortalLocation.xCoord + 1, PortalLocations.BluePortalLocation.yCoord, false);
-
-                    Game1.getLocationFromName(PortalLocations.OrangePortalLocation.locationName).warps.Add(PortalLocations.portalWarpLocations[1]);
-
-                    if (PortalLocations.portalWarpLocations[0] != PortalLocations.portalWarpLocations[2])
-                    {
-                        Game1.getLocationFromName(PortalLocations.portalWarpLocations[1].TargetName).warps.Remove(PortalLocations.portalWarpLocations[0]);
-                    }
-
-                    PortalLocations.portalWarpLocations[0] = new Warp(PortalLocations.BluePortalLocation.xCoord,
-                        PortalLocations.BluePortalLocation.yCoord, PortalLocations.OrangePortalLocation.locationName,
-                        PortalLocations.OrangePortalLocation.xCoord + 1, PortalLocations.OrangePortalLocation.yCoord, false);
-
-                    Game1.getLocationFromName(PortalLocations.BluePortalLocation.locationName).warps.Add(PortalLocations.portalWarpLocations[0]);
-                }
-                Game1.currentLocation.playSound("debuffHit");
-            }
-        } */
-        ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
         private void SetPortalLocation(int newIndex, int targetIndex, PortalLocation newLocation)
         {
-                if (PortalLocations.portalLocations[newIndex].exists)
-                {
-                    // remove old tile
-                    Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).removeTile(PortalLocations.portalLocations[newIndex].xCoord,
-                        PortalLocations.portalLocations[newIndex].yCoord, "Buildings");
+            if (PortalLocations.portalLocations[newIndex].exists)
+            {
+                // remove old tile
+                Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).removeTile(PortalLocations.portalLocations[newIndex].xCoord,
+                    PortalLocations.portalLocations[newIndex].yCoord, "Buildings");
 
-                    // replace old tile
-                    Layer layerOld = Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).map.GetLayer("Buildings");
-                    layerOld.Tiles[PortalLocations.portalLocations[newIndex].xCoord, PortalLocations.portalLocations[newIndex].yCoord] = PortalLocations.OldTiles[newIndex];
-                }
+                // replace old tile
+                Layer layerOld = Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).map.GetLayer("Buildings");
+                layerOld.Tiles[PortalLocations.portalLocations[newIndex].xCoord, PortalLocations.portalLocations[newIndex].yCoord] = PortalLocations.OldTiles[newIndex];
+            }
 
-                PortalLocations.portalLocations[newIndex] = newLocation;
+            PortalLocations.portalLocations[newIndex] = newLocation;
 
-                // save old tile
-                Layer layer = Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).map.GetLayer("Buildings");
-                PortalLocations.OldTiles[newIndex] = layer.Tiles[PortalLocations.portalLocations[newIndex].xCoord, PortalLocations.portalLocations[newIndex].yCoord];
+            // save old tile
+            Layer layer = Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).map.GetLayer("Buildings");
+            PortalLocations.OldTiles[newIndex] = layer.Tiles[PortalLocations.portalLocations[newIndex].xCoord, PortalLocations.portalLocations[newIndex].yCoord];
 
             if (newIndex == 0)
             {
@@ -356,35 +250,33 @@ namespace CustomPortalLocations
                 OrangeAnimationFrame = 5;
             }
 
-                //layer.Tiles[PortalLocations.BluePortalLocation.xCoord, PortalLocations.BluePortalLocation.yCoord] = new StaticTile(layer, tileSheet, BlendMode.Alpha, 4);
+            Game1.showGlobalMessage("New Blue Portal Location Saved");
 
-                Game1.showGlobalMessage("New Blue Portal Location Saved");
-
-                if (PortalLocations.portalLocations[targetIndex].exists)
+            if (PortalLocations.portalLocations[targetIndex].exists)
+            {
+                if (PortalLocations.portalWarpLocations[newIndex] != PortalLocations.portalWarpLocations[2])
                 {
-                    if (PortalLocations.portalWarpLocations[newIndex] != PortalLocations.portalWarpLocations[2])
-                    {
-                        Game1.getLocationFromName(PortalLocations.portalWarpLocations[targetIndex].TargetName).warps.Remove(PortalLocations.portalWarpLocations[newIndex]);
-                    }
-
-                    PortalLocations.portalWarpLocations[newIndex] = new Warp(PortalLocations.portalLocations[newIndex].xCoord,
-                        PortalLocations.portalLocations[newIndex].yCoord, PortalLocations.portalLocations[targetIndex].locationName,
-                        PortalLocations.portalLocations[targetIndex].xCoord + 1, PortalLocations.portalLocations[targetIndex].yCoord, false);
-
-                    Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).warps.Add(PortalLocations.portalWarpLocations[newIndex]);
-
-                    if (PortalLocations.portalWarpLocations[targetIndex] != PortalLocations.portalWarpLocations[2])
-                    {
-                        Game1.getLocationFromName(PortalLocations.portalWarpLocations[newIndex].TargetName).warps.Remove(PortalLocations.portalWarpLocations[targetIndex]);
-                    }
-
-                    PortalLocations.portalWarpLocations[targetIndex] = new Warp(PortalLocations.portalLocations[targetIndex].xCoord,
-                        PortalLocations.portalLocations[targetIndex].yCoord, PortalLocations.portalLocations[newIndex].locationName,
-                        PortalLocations.portalLocations[newIndex].xCoord + 1, PortalLocations.portalLocations[newIndex].yCoord, false);
-
-                    Game1.getLocationFromName(PortalLocations.portalLocations[targetIndex].locationName).warps.Add(PortalLocations.portalWarpLocations[targetIndex]);
+                    Game1.getLocationFromName(PortalLocations.portalWarpLocations[targetIndex].TargetName).warps.Remove(PortalLocations.portalWarpLocations[newIndex]);
                 }
-                Game1.currentLocation.playSound("debuffSpell");
+
+                PortalLocations.portalWarpLocations[newIndex] = new Warp(PortalLocations.portalLocations[newIndex].xCoord,
+                    PortalLocations.portalLocations[newIndex].yCoord, PortalLocations.portalLocations[targetIndex].locationName,
+                    PortalLocations.portalLocations[targetIndex].xCoord + 1, PortalLocations.portalLocations[targetIndex].yCoord, false);
+
+                Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).warps.Add(PortalLocations.portalWarpLocations[newIndex]);
+
+                if (PortalLocations.portalWarpLocations[targetIndex] != PortalLocations.portalWarpLocations[2])
+                {
+                    Game1.getLocationFromName(PortalLocations.portalWarpLocations[newIndex].TargetName).warps.Remove(PortalLocations.portalWarpLocations[targetIndex]);
+                }
+
+                PortalLocations.portalWarpLocations[targetIndex] = new Warp(PortalLocations.portalLocations[targetIndex].xCoord,
+                    PortalLocations.portalLocations[targetIndex].yCoord, PortalLocations.portalLocations[newIndex].locationName,
+                    PortalLocations.portalLocations[newIndex].xCoord + 1, PortalLocations.portalLocations[newIndex].yCoord, false);
+
+                Game1.getLocationFromName(PortalLocations.portalLocations[targetIndex].locationName).warps.Add(PortalLocations.portalWarpLocations[targetIndex]);
+            }
+            Game1.currentLocation.playSound("debuffSpell");
         }
 
 
