@@ -1,4 +1,6 @@
-﻿namespace CustomPortalLocations
+﻿using StardewValley;
+
+namespace CustomPortalLocations
 {
     internal class PortalLocation
     {
