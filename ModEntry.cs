@@ -31,6 +31,10 @@ namespace CustomPortalLocations
 
         internal static NewPortalLocations PortalLocations;
 
+        public Warp[] portalWarpLocations { get; set; } = new Warp[10] { null, null, null, null, null, null, null, null, null, null };
+
+        public Tile[] OldTiles { get; set; } = new Tile[10] { null, null, null, null, null, null, null, null, null, null };
+
         /// <summary>Get all game locations.</summary>
         public static IEnumerable<GameLocation> GetLocations()
         {
@@ -45,7 +49,11 @@ namespace CustomPortalLocations
 
         private ModConfig config;
 
-        public CustomObjectData portalGun;
+        public CustomObjectData portalGun1;
+        public CustomObjectData portalGun2;
+        public CustomObjectData portalGun3;
+        public CustomObjectData portalGun4;
+        public CustomObjectData portalGun1Potato;
 
         
 
@@ -61,36 +69,35 @@ namespace CustomPortalLocations
 
             ControlEvents.KeyPressed += this.KeyPressed;
             GameEvents.SecondUpdateTick += GameEvents_SecondUpdateTick;
-
-
+            MineEvents.MineLevelChanged += ReloadMinePortals;
         }
 
         
         private void AfterLoad(object sender, EventArgs e)
         {
-            // make portalGun object
-            Texture2D portalGunTexture = this.Helper.Content.Load<Texture2D>("PortalGun1.png");
-
-            portalGun = CustomObjectData.newObject("PortalGunId", portalGunTexture, Color.White, "Portal Gun",
+            // make portalGun objects
+            Texture2D portalGun1Texture = this.Helper.Content.Load<Texture2D>("PortalGun1.png");
+            portalGun1 = CustomObjectData.newObject("PortalGun1Id", portalGun1Texture, Color.White, "Portal Gun1",
                 "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Portal Gun", "388 1"));
-            
-            // Reads or Creates a Portal Gun save data file
-            LocationSaveFileName =
-                $"{this.Helper.DirectoryPath}{Path.DirectorySeparatorChar}Data{Path.DirectorySeparatorChar}{Constants.SaveFolderName}portal-gun.json";
 
-            if (File.Exists(LocationSaveFileName))
-            {
-                PortalLocations = this.Helper.ReadJsonFile<NewPortalLocations>(LocationSaveFileName) ?? new NewPortalLocations();
-            }
-            else
-            {
-                PortalLocations = new NewPortalLocations();
-            }
+            /* Texture2D portalGun2Texture = this.Helper.Content.Load<Texture2D>("PortalGun2.png");
+            portalGun2 = CustomObjectData.newObject("PortalGun2Id", portalGun2Texture, Color.White, "Portal Gun2",
+                "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Portal Gun2", "388 1")); */
 
-            this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+            Texture2D portalGun3Texture = this.Helper.Content.Load<Texture2D>("PortalGun3.png");
+            portalGun3 = CustomObjectData.newObject("PortalGun3Id", portalGun3Texture, Color.White, "Portal Gun3",
+                "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Portal Gun3", "388 1"));
+
+            Texture2D portalGun4Texture = this.Helper.Content.Load<Texture2D>("PortalGun4.png");
+            portalGun4 = CustomObjectData.newObject("PortalGunId4", portalGun4Texture, Color.White, "Portal Gun4",
+                "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Portal Gun4", "388 1"));
+
+            Texture2D portalGun1PotatoTexture = this.Helper.Content.Load<Texture2D>("PortalGun1Potato.png");
+            portalGun1Potato = CustomObjectData.newObject("PortalGun1PotatoId", portalGun1PotatoTexture, Color.White, "Portal Gun1 Potato",
+                "Oh no, it's you", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Portal Gun1 Potato", "388 1"));
 
             // get animated portal tilesheet file
-            string tileSheetPath = this.Helper.Content.GetActualAssetKey("PortalsAnimated.png", ContentSource.ModFolder);
+            string tileSheetPath = this.Helper.Content.GetActualAssetKey("PortalsAnimated3.png", ContentSource.ModFolder);
             foreach (GameLocation location in GetLocations())
             {
                 // Add the tilesheet.
@@ -98,17 +105,62 @@ namespace CustomPortalLocations
                    id: "z_portal-spritesheet", // a unique ID for the tilesheet
                    map: location.map,
                    imageSource: tileSheetPath,
-                   sheetSize: new xTile.Dimensions.Size(160, 16), // the pixel size of your tilesheet image.
+                   sheetSize: new xTile.Dimensions.Size(800, 16), // the pixel size of your tilesheet image.
                    tileSize: new xTile.Dimensions.Size(16, 16) // should always be 16x16 for maps
                 );
                 location.map.AddTileSheet(tileSheet);
                 location.map.LoadTileSheets(Game1.mapDisplayDevice);
-
             }
 
-            // initialize portalLocation array with default items
-            PortalLocations.portalLocations[0] = new PortalLocation();
-            PortalLocations.portalLocations[1] = new PortalLocation();
+            int mineLevel = Game1.player.deepestMineLevel;
+            for (int i = 1; i <= mineLevel; i++)
+            {
+                GameLocation location = Game1.getLocationFromName($"UndergroundMine{i}");
+                
+                // Add the tilesheet.
+                TileSheet tileSheet = new TileSheet(
+                   id: "z_portal-spritesheet", // a unique ID for the tilesheet
+                   map: location.map,
+                   imageSource: tileSheetPath,
+                   sheetSize: new xTile.Dimensions.Size(800, 16), // the pixel size of your tilesheet image.
+                   tileSize: new xTile.Dimensions.Size(16, 16) // should always be 16x16 for maps
+                );
+                location.map.AddTileSheet(tileSheet);
+                location.map.LoadTileSheets(Game1.mapDisplayDevice);
+            }
+
+            // Reads or Creates a Portal Gun save data file
+            LocationSaveFileName =
+                $"{this.Helper.DirectoryPath}{Path.DirectorySeparatorChar}Data{Path.DirectorySeparatorChar}{Constants.SaveFolderName}.json";
+
+            if (File.Exists(LocationSaveFileName))
+            {
+                PortalLocations = this.Helper.ReadJsonFile<NewPortalLocations>(LocationSaveFileName);
+                for (int i = 0; i < 10; i++)
+                {
+                    if (PortalLocations.portalLocations[i].exists)
+                    {
+                        if (i % 2 == 0)
+                        {
+                            this.SetPortalLocation(i, i + 1, PortalLocations.portalLocations[i]);
+                        }
+                        else
+                        {
+                            this.SetPortalLocation(i, i - 1, PortalLocations.portalLocations[i]);
+                        }
+                    }
+                }
+            }
+            else 
+            {
+                PortalLocations = new NewPortalLocations();
+                // initialize portalLocation array with default items
+                for (int i = 0; i < 10; i++)
+                {
+                    PortalLocations.portalLocations[i] = new PortalLocation();
+                }
+                this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+            }
         }
 
         private void GameEvents_UpdateTick(object sender, EventArgs e)
@@ -118,44 +170,70 @@ namespace CustomPortalLocations
                 return;
         }
 
-        public int BlueAnimationFrame = -1;
-        public int OrangeAnimationFrame = 4;
+        //public int BlueAnimationFrame = -1;
+        //public int OrangeAnimationFrame = 4;
+        public int[] portalAnimationFrame = new int[10] { -1, -1, -1, -1, -1, -1, -1, -1, -1, -1};
+
 
         private void GameEvents_SecondUpdateTick(object sender, EventArgs e)
         {
-            // portal animation frames
-            if (BlueAnimationFrame > -1)
+            for (int i = 0; i < 10; i++)
             {
-                // remove old tile
-                Game1.getLocationFromName(PortalLocations.portalLocations[0].locationName).removeTile(PortalLocations.portalLocations[0].xCoord,
-                    PortalLocations.portalLocations[0].yCoord, "Buildings");
-
-                Layer layer = Game1.getLocationFromName(PortalLocations.portalLocations[0].locationName).map.GetLayer("Buildings");
-                TileSheet tileSheet = Game1.getLocationFromName(PortalLocations.portalLocations[0].locationName).map.GetTileSheet("z_portal-spritesheet");
-                layer.Tiles[PortalLocations.portalLocations[0].xCoord, PortalLocations.portalLocations[0].yCoord] = new StaticTile(layer, tileSheet, BlendMode.Alpha, BlueAnimationFrame);
-
-                if (BlueAnimationFrame != 4)
+                if (portalAnimationFrame[i] > -1)
                 {
-                    ++BlueAnimationFrame;
-                }
-            }
-            if (OrangeAnimationFrame > 4)
-            {
-                // remove old tile
-                Game1.getLocationFromName(PortalLocations.portalLocations[1].locationName).removeTile(PortalLocations.portalLocations[1].xCoord,
-                    PortalLocations.portalLocations[1].yCoord, "Buildings");
+                    if (portalAnimationFrame[i] < 4)
+                    {
+                        ++portalAnimationFrame[i];
+                        // remove old tile
+                        Game1.getLocationFromName(PortalLocations.portalLocations[i].locationName).removeTile(PortalLocations.portalLocations[i].xCoord,
+                            PortalLocations.portalLocations[i].yCoord, "Buildings");
 
-                Layer layer = Game1.getLocationFromName(PortalLocations.portalLocations[1].locationName).map.GetLayer("Buildings");
-                TileSheet tileSheet = Game1.getLocationFromName(PortalLocations.portalLocations[1].locationName).map.GetTileSheet("z_portal-spritesheet");
-                layer.Tiles[PortalLocations.portalLocations[1].xCoord, PortalLocations.portalLocations[1].yCoord] = new StaticTile(layer, tileSheet, BlendMode.Alpha, OrangeAnimationFrame);
-
-                if (OrangeAnimationFrame != 9)
-                {
-                    ++OrangeAnimationFrame;
+                        Layer layer = Game1.getLocationFromName(PortalLocations.portalLocations[i].locationName).map.GetLayer("Buildings");
+                        TileSheet tileSheet = Game1.getLocationFromName(PortalLocations.portalLocations[i].locationName).map.GetTileSheet("z_portal-spritesheet");
+                        layer.Tiles[PortalLocations.portalLocations[i].xCoord, PortalLocations.portalLocations[i].yCoord] = new StaticTile(layer, tileSheet, BlendMode.Alpha, portalAnimationFrame[i] + i * 5);
+                    }
+                    else
+                    {
+                        portalAnimationFrame[i] = -1;
+                    }
                 }
             }
         }
 
+        private void ReloadMinePortals(object sender, EventArgs e)
+        {
+            string tileSheetPath = this.Helper.Content.GetActualAssetKey("PortalsAnimated3.png", ContentSource.ModFolder);
+            int mineLevel = Game1.player.deepestMineLevel;
+            for (int i = 1; i <= mineLevel; i++)
+            {
+                GameLocation location = Game1.getLocationFromName($"UndergroundMine{i}");
+
+                // Add the tilesheet.
+                TileSheet tileSheet = new TileSheet(
+                   id: "z_portal-spritesheet", // a unique ID for the tilesheet
+                   map: location.map,
+                   imageSource: tileSheetPath,
+                   sheetSize: new xTile.Dimensions.Size(800, 16), // the pixel size of your tilesheet image.
+                   tileSize: new xTile.Dimensions.Size(16, 16) // should always be 16x16 for maps
+                );
+                location.map.AddTileSheet(tileSheet);
+                location.map.LoadTileSheets(Game1.mapDisplayDevice);
+            }
+            for (int i = 0; i < 10; i++)
+            {
+                if (PortalLocations.portalLocations[i].exists)
+                {
+                    if (i % 2 == 0)
+                    {
+                        this.SetPortalLocation(i, i + 1, PortalLocations.portalLocations[i]);
+                    }
+                    else
+                    {
+                        this.SetPortalLocation(i, i - 1, PortalLocations.portalLocations[i]);
+                    }
+                }
+            }
+        }
 
         /**
          * Handles pressed keys in order to save new warp locations.
@@ -175,18 +253,28 @@ namespace CustomPortalLocations
             /* if (e.KeyPressed.ToString().ToLower() != this.config.BluePortalSpawnKey.ToLower()
                 && e.KeyPressed.ToString().ToLower() != this.config.OrangePortalSpawnKey.ToLower())
                 return; */
-                
-
-            if (Game1.player.CurrentItem.DisplayName != "Portal Gun")
+            string itemName = Game1.player.CurrentItem.DisplayName;
+            if (itemName != "Portal Gun1" && itemName != "Portal Gun2" && itemName != "Portal Gun3" && itemName != "Portal Gun4" && itemName != "Portal Gun1 Potato" )
             {
                 return;
             }
 
             var location = this.GetPortalLocation();
 
-            if (location == PortalLocations.portalLocations[0] || location == PortalLocations.portalLocations[1])
+            if (!Game1.getLocationFromName(location.locationName).isTileLocationTotallyClearAndPlaceable(location.xCoord, location.yCoord))
             {
+                //Game1.showGlobalMessage("Tile location is not totally clear and placeable");
                 return;
+            }
+            Game1.showGlobalMessage($"{location.locationName}");
+
+
+            for (int i = 0; i < 10; i++)
+            {
+                if (location == PortalLocations.portalLocations[i])
+                {
+                    return;
+                }
             }
 
             /* if (Game1.getLocationFromName(location.locationName).waterTiles[location.xCoord + 1, location.yCoord])
@@ -196,21 +284,77 @@ namespace CustomPortalLocations
 
             // Game1.player
 
-
-
-
-            if (e.KeyPressed.ToString().ToLower() == this.config.BluePortalSpawnKey.ToLower())
+            if (Game1.player.CurrentItem.Name == "Portal Gun1")
             {
-                this.SetPortalLocation(0, 1, location);
-                this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+                if (e.KeyPressed.ToString().ToLower() == this.config.Portal1SpawnKey.ToLower())
+                {
+                    this.SetPortalLocation(0, 1, location);
+                    Game1.currentLocation.playSound("debuffSpell");
+                    this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+
+                }
+
+                else if (e.KeyPressed.ToString().ToLower() == this.config.Portal2SpawnKey.ToLower())
+                {
+                    this.SetPortalLocation(1, 0, location);
+                    Game1.currentLocation.playSound("debuffSpell");
+                    this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+                }
 
             }
-
-            else if (e.KeyPressed.ToString().ToLower() == this.config.OrangePortalSpawnKey.ToLower())
+            else if (Game1.player.CurrentItem.Name == "Portal Gun1 Potato")
             {
-                this.SetPortalLocation(1, 0, location);
-                this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+                if (e.KeyPressed.ToString().ToLower() == this.config.Portal1SpawnKey.ToLower())
+                {
+                    this.SetPortalLocation(2, 3, location);
+                    Game1.currentLocation.playSound("debuffSpell");
+                    this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+
+                }
+
+                else if (e.KeyPressed.ToString().ToLower() == this.config.Portal2SpawnKey.ToLower())
+                {
+                    this.SetPortalLocation(3, 2, location);
+                    Game1.currentLocation.playSound("debuffSpell");
+                    this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+                }
             }
+            else if (Game1.player.CurrentItem.Name == "Portal Gun3")
+            {
+                if (e.KeyPressed.ToString().ToLower() == this.config.Portal1SpawnKey.ToLower())
+                {
+                    this.SetPortalLocation(4, 5, location);
+                    Game1.currentLocation.playSound("debuffSpell");
+                    this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+
+                }
+
+                else if (e.KeyPressed.ToString().ToLower() == this.config.Portal2SpawnKey.ToLower())
+                {
+                    this.SetPortalLocation(5, 4, location);
+                    Game1.currentLocation.playSound("debuffSpell");
+                    this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+                }
+            }
+            else if (Game1.player.CurrentItem.Name == "Portal Gun4")
+            {
+                if (e.KeyPressed.ToString().ToLower() == this.config.Portal1SpawnKey.ToLower())
+                {
+                    this.SetPortalLocation(6, 7, location);
+                    Game1.currentLocation.playSound("debuffSpell");
+                    this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+
+                }
+
+                else if (e.KeyPressed.ToString().ToLower() == this.config.Portal2SpawnKey.ToLower())
+                {
+                    this.SetPortalLocation(7, 6, location);
+                    Game1.currentLocation.playSound("debuffSpell");
+                    this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+                }
+            }
+
+
         }
 
         private void SetPortalLocation(int newIndex, int targetIndex, PortalLocation newLocation)
@@ -223,54 +367,43 @@ namespace CustomPortalLocations
 
                 // replace old tile
                 Layer layerOld = Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).map.GetLayer("Buildings");
-                layerOld.Tiles[PortalLocations.portalLocations[newIndex].xCoord, PortalLocations.portalLocations[newIndex].yCoord] = PortalLocations.OldTiles[newIndex];
+                layerOld.Tiles[PortalLocations.portalLocations[newIndex].xCoord, PortalLocations.portalLocations[newIndex].yCoord] = OldTiles[newIndex];
             }
 
             PortalLocations.portalLocations[newIndex] = newLocation;
 
             // save old tile
             Layer layer = Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).map.GetLayer("Buildings");
-            PortalLocations.OldTiles[newIndex] = layer.Tiles[PortalLocations.portalLocations[newIndex].xCoord, PortalLocations.portalLocations[newIndex].yCoord];
+           OldTiles[newIndex] = layer.Tiles[PortalLocations.portalLocations[newIndex].xCoord, PortalLocations.portalLocations[newIndex].yCoord];
 
-            // pick animation to run
-            if (newIndex == 0)
-            {
-                BlueAnimationFrame = 0;
-            }
-
-            else if (newIndex == 1)
-            {
-                OrangeAnimationFrame = 5;
-            }
-
-            Game1.showGlobalMessage("New Portal Location Saved");
+            portalAnimationFrame[newIndex] = 0;
 
             // if the other portal exists, set / replace warps
             if (PortalLocations.portalLocations[targetIndex].exists)
             {
-                if (PortalLocations.portalWarpLocations[newIndex] != PortalLocations.portalWarpLocations[2])
+                if (portalWarpLocations[newIndex] != null)
                 {
-                    Game1.getLocationFromName(PortalLocations.portalWarpLocations[targetIndex].TargetName).warps.Remove(PortalLocations.portalWarpLocations[newIndex]);
+                    Game1.getLocationFromName(portalWarpLocations[targetIndex].TargetName).warps.Remove(portalWarpLocations[newIndex]);
                 }
 
-                PortalLocations.portalWarpLocations[newIndex] = new Warp(PortalLocations.portalLocations[newIndex].xCoord,
+                portalWarpLocations[newIndex] = new Warp(PortalLocations.portalLocations[newIndex].xCoord,
                     PortalLocations.portalLocations[newIndex].yCoord, PortalLocations.portalLocations[targetIndex].locationName,
                     PortalLocations.portalLocations[targetIndex].xCoord + 1, PortalLocations.portalLocations[targetIndex].yCoord, false);
 
-                Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).warps.Add(PortalLocations.portalWarpLocations[newIndex]);
+                Game1.getLocationFromName(PortalLocations.portalLocations[newIndex].locationName).warps.Add(portalWarpLocations[newIndex]);
 
-                if (PortalLocations.portalWarpLocations[targetIndex] != PortalLocations.portalWarpLocations[2])
+                if (portalWarpLocations[targetIndex] != null)
                 {
-                    Game1.getLocationFromName(PortalLocations.portalWarpLocations[newIndex].TargetName).warps.Remove(PortalLocations.portalWarpLocations[targetIndex]);
+                    Game1.getLocationFromName(portalWarpLocations[newIndex].TargetName).warps.Remove(portalWarpLocations[targetIndex]);
                 }
 
-                PortalLocations.portalWarpLocations[targetIndex] = new Warp(PortalLocations.portalLocations[targetIndex].xCoord,
+                portalWarpLocations[targetIndex] = new Warp(PortalLocations.portalLocations[targetIndex].xCoord,
                     PortalLocations.portalLocations[targetIndex].yCoord, PortalLocations.portalLocations[newIndex].locationName,
                     PortalLocations.portalLocations[newIndex].xCoord + 1, PortalLocations.portalLocations[newIndex].yCoord, false);
 
-                Game1.getLocationFromName(PortalLocations.portalLocations[targetIndex].locationName).warps.Add(PortalLocations.portalWarpLocations[targetIndex]);
+                Game1.getLocationFromName(PortalLocations.portalLocations[targetIndex].locationName).warps.Add(portalWarpLocations[targetIndex]);
+                
             }
-            Game1.currentLocation.playSound("debuffSpell");
         }
 
 
