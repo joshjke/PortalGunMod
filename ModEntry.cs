@@ -261,7 +261,8 @@ namespace CustomPortalLocations
 
             var location = this.GetPortalLocation();
 
-            if (!Game1.getLocationFromName(location.locationName).isTileLocationTotallyClearAndPlaceable(location.xCoord, location.yCoord))
+            if (!Game1.getLocationFromName(location.locationName).isTileLocationTotallyClearAndPlaceable(location.xCoord, location.yCoord)
+                || !Game1.getLocationFromName(location.locationName).isTileLocationTotallyClearAndPlaceable(location.xCoord + 1, location.yCoord))
             {
                 //Game1.showGlobalMessage("Tile location is not totally clear and placeable");
                 return;
