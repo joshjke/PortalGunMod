@@ -2,6 +2,7 @@
 
 namespace CustomPortalLocations
 {
+    // Class to hold necessary data for PortalLocations
     internal class PortalLocation
     {
         public string locationName;
