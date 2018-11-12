@@ -272,9 +272,16 @@ namespace CustomPortalLocations
             {
                 return;
             }
-            
+  
+            if (Game1.menuUp)
+            {
+                //Game1.showGlobalMessage("menuUp");
+                return;
+            }
+
             if (Game1.activeClickableMenu != null)
             {
+                //Game1.showGlobalMessage("active clickable menu");
                 return;
             }
 
