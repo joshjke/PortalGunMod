@@ -1,6 +1,9 @@
 # PortalGunMod
 Adds craftable, functional Portal Guns into Stardew Valley. Requires SMAPI and Pytk.
 
+[Nexus Page](https://www.nexusmods.com/stardewvalley/mods/3049)
+
+### Installation
 1. [Install the latest version of SMAPI](https://smapi.io)
 2. [Download and unizp PyTK into your Stardew Valley/Mods Folder](https://www.nexusmods.com/stardewvalley/mods/1726)
 3. [Download and unzip Portal Guns into your Stardew Valley/Mods Folder](https://www.nexusmods.com/stardewvalley/mods/3049)
