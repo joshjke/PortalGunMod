@@ -92,9 +92,9 @@ namespace CustomPortalLocations
         // Loads portGun Objects, portal animation tiles, and saves/loads locations from JSON
         private void AfterLoad(object sender, EventArgs e)
         {
-            LoadPortalSaves(sender, e);
-            LoadPortalGunObjects(sender, e);
-            LoadPortalTextures(sender, e);
+            LoadPortalSaves();
+            LoadPortalGunObjects();
+            LoadPortalTextures();
             LoadMinePortals(sender, e);
         }
 
@@ -105,31 +105,31 @@ namespace CustomPortalLocations
                 return;
         }
 
-        private void LoadPortalGunObjects(object sender, EventArgs e)
+        private void LoadPortalGunObjects()
         {
             // create portalGun objects
             Texture2D portalGunTexture = this.Helper.Content.Load<Texture2D>("PortalGun1.png");
             portalGun1 = CustomObjectData.newObject("PortalGun1Id", portalGunTexture, Color.White, "Portal Gun",
-                "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Portal Gun", "388 1"));
+                "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Portal Gun", "335 5 768 5 769 5"));
 
             Texture2D portalGunPotatoTexture = this.Helper.Content.Load<Texture2D>("PortalGun1Potato.png");
             portalGun1Potato = CustomObjectData.newObject("PortalGun1PotatoId", portalGunPotatoTexture, Color.White, "Portal Gun Potato",
-                "Oh no, it's you", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Portal Gun Potato", "388 1"));
+                "Oh no, it's you", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Portal Gun Potato", "335 5 768 5 769 5 192 1"));
 
             Texture2D bluePortalGunTexture = this.Helper.Content.Load<Texture2D>("PortalGun2.png");
             portalGun2 = CustomObjectData.newObject("PortalGun2Id", bluePortalGunTexture, Color.White, "Blue Portal Gun",
-                "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Blue Portal Gun", "388 1"));
+                "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Blue Portal Gun", "335 5 768 5 769 5"));
 
             Texture2D greenPortalGunTexture = this.Helper.Content.Load<Texture2D>("PortalGun3.png");
             portalGun3 = CustomObjectData.newObject("PortalGun3Id", greenPortalGunTexture, Color.White, "Green Portal Gun",
-                "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Green Portal Gun", "388 1"));
+                "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Green Portal Gun", "335 5 768 5 769 5"));
 
             Texture2D orangePortalGunTexture = this.Helper.Content.Load<Texture2D>("PortalGun4.png");
             portalGun4 = CustomObjectData.newObject("PortalGunId4", orangePortalGunTexture, Color.White, "Orange Portal Gun",
-                "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Orange Portal Gun", "388 1"));
+                "Property of Aperture Science Inc.", 0, "", "Basic", 1, -300, "", craftingData: new CraftingData("Orange Portal Gun", "335 5 768 5 769 5"));
         }
 
-        private void LoadPortalTextures(object sender, EventArgs e)
+        private void LoadPortalTextures()
         {
             // get animated portal tilesheet file
             string tileSheetPath = this.Helper.Content.GetActualAssetKey("PortalsAnimated3.png", ContentSource.ModFolder);
@@ -187,7 +187,7 @@ namespace CustomPortalLocations
             }
         }
 
-        private void LoadPortalSaves(object sender, EventArgs e)
+        private void LoadPortalSaves()
         {
             // Reads or Creates a Portal Gun save data file
             LocationSaveFileName =
@@ -226,8 +226,11 @@ namespace CustomPortalLocations
         private void KeyPressed(object sender, EventArgsKeyPressed e)
         {
             if (!Context.IsWorldReady)
+            {
                 return;
+            }
 
+            // Retract portals of current portal gun
             if (e.KeyPressed.ToString().ToLower() == this.config.RetractPortals.ToLower())
             {
                 int portalIndex = GetPortalIndex();
@@ -237,19 +240,27 @@ namespace CustomPortalLocations
                 }
                 else
                 {
+                    // Remove the tiles
                     RemovePortalTile(portalIndex);
                     RemovePortalTile(portalIndex + 1);
-
+                    // Remove the warps
                     RemoveCurrentPortalWarps(portalIndex, portalIndex + 1);
-
+                    // Reset the portalLocations
                     PortalLocations.portalLocations[portalIndex] = new PortalLocation();
                     PortalLocations.portalLocations[portalIndex + 1] = new PortalLocation();
-
+                    // Reset the warpLocations
                     PortalWarpLocations[portalIndex] = null;
                     PortalWarpLocations[portalIndex + 1] = null;
-
+                    // Reset the oldTiles
                     OldTiles[portalIndex] = null;
                     OldTiles[portalIndex + 1] = null;
+                    // Save portal status
+                    this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
+
+                    // Animation for some indication other than sound
+                    Game1.switchToolAnimation();
+
+                    Game1.currentLocation.playSound("serpentDie");
                 }
             }
         }
@@ -258,13 +269,9 @@ namespace CustomPortalLocations
         private void ButtonPressed(object sender, EventArgsInput e)
         {
             if (!Context.IsWorldReady)
+            {
                 return;
-
-            /* Game1.switchToolAnimation
-            Game1.showSwordswipeAnimation
-            Game1.animations
-            if (Game1.activeClickableMenu?.GetType().FullName == "StardewValley.Menus.TitleTextInputMenu") */
-                
+            }
             
             if (Game1.activeClickableMenu != null)
             {
@@ -285,6 +292,10 @@ namespace CustomPortalLocations
 
         private void PortalSpawner(object sender, EventArgsInput e)
         {
+            if (Game1.isFestival())
+            {
+                return;
+            }
             // Checks for a portal gun
             if (Game1.player.ActiveObject == null)
             {
@@ -303,6 +314,11 @@ namespace CustomPortalLocations
                 || !Game1.getLocationFromName(location.locationName).isTileLocationTotallyClearAndPlaceable(location.xCoord + 1, location.yCoord))
             {
                 //Game1.showGlobalMessage("Tile location is not totally clear and placeable");
+
+                // Animation for some indication other than sound
+                Game1.switchToolAnimation();
+
+                Game1.currentLocation.playSound("serpentHit");
                 return;
             }
 
@@ -311,9 +327,14 @@ namespace CustomPortalLocations
             {
                 if (location == PortalLocations.portalLocations[i])
                 {
+                    // Animation for some indication other than sound
+                    Game1.switchToolAnimation();
+
+                    Game1.currentLocation.playSound("serpentHit");
                     return;
                 }
             }
+            //Game1.showGlobalMessage($"{Game1.currentLocation.Name}");
 
             int newPortalIndex = GetPortalIndex();
             if (newPortalIndex == -1)
@@ -324,6 +345,7 @@ namespace CustomPortalLocations
             {
                 if (e.IsUseToolButton)
                 {
+                    
                     this.SetPortalLocation(newPortalIndex, newPortalIndex + 1, location);
                     this.Helper.WriteJsonFile(LocationSaveFileName, PortalLocations);
                 }
@@ -336,6 +358,9 @@ namespace CustomPortalLocations
                 {
                     return;
                 }
+                // Animation for some indication other than sound
+                Game1.switchToolAnimation();
+
                 // Play sounds only when a new portalLocation is set
                 Game1.currentLocation.playSound("debuffSpell");
             }
@@ -432,7 +457,7 @@ namespace CustomPortalLocations
                         // Remove old tile
                         Game1.getLocationFromName(PortalLocations.portalLocations[i].locationName).removeTile(PortalLocations.portalLocations[i].xCoord,
                             PortalLocations.portalLocations[i].yCoord, "Buildings");
-
+                        
                         // Place new tile
                         Layer layer = Game1.getLocationFromName(PortalLocations.portalLocations[i].locationName).map.GetLayer("Buildings");
                         TileSheet tileSheet = Game1.getLocationFromName(PortalLocations.portalLocations[i].locationName).map.GetTileSheet("z_portal-spritesheet");
