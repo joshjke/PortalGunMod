@@ -26,6 +26,16 @@ namespace CustomPortalLocations
                         && location1.exists == location2.exists);
         }
 
+        public override bool Equals(object obj)
+        {
+            return this == (PortalLocation)obj;
+        }
+
+        public override int GetHashCode()
+        {
+            return base.GetHashCode();
+        }
+
         public static bool operator != (PortalLocation location1, PortalLocation location2)
         {
             return !(location1.locationName == location2.locationName
