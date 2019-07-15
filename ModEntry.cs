@@ -84,6 +84,8 @@ namespace CustomPortalLocations
             helper.Events.Input.ButtonPressed += this.ButtonPressed;
 
             helper.Events.Player.Warped += this.LoadMinePortalsEvent;
+
+            helper.Events.Multiplayer.ModMessageReceived += this.OnModMessageReceived;
         }
 
 
@@ -146,8 +148,12 @@ namespace CustomPortalLocations
                    sheetSize: new xTile.Dimensions.Size(800, 16), // the pixel size of your tilesheet image.
                    tileSize: new xTile.Dimensions.Size(16, 16) // should always be 16x16 for maps
                 );
-                location.map.AddTileSheet(tileSheet);// Multiplayer load error here
-                location.map.LoadTileSheets(Game1.mapDisplayDevice);
+                if (location != null && location.map != null && tileSheet != null)
+                {
+                    this.Monitor.Log("adding and loading tilesheet in active multiplayer", LogLevel.Debug);
+                    location.map.AddTileSheet(tileSheet);// Multiplayer load error here
+                    location.map.LoadTileSheets(Game1.mapDisplayDevice);
+                }
             }
 
             foreach (GameLocation location in GetLocations())
@@ -160,12 +166,17 @@ namespace CustomPortalLocations
                    sheetSize: new xTile.Dimensions.Size(800, 16), // the pixel size of your tilesheet image.
                    tileSize: new xTile.Dimensions.Size(16, 16) // should always be 16x16 for maps
                 );
-                location.map.AddTileSheet(tileSheet);// Multiplayer load error here
-                location.map.LoadTileSheets(Game1.mapDisplayDevice);
+
+                if (location != null && location.map != null && tileSheet != null)
+                {
+                    this.Monitor.Log("adding and loading tilesheet in all maps", LogLevel.Debug);
+                    location.map.AddTileSheet(tileSheet);// Multiplayer load error here
+                    location.map.LoadTileSheets(Game1.mapDisplayDevice);
+                }
             }
+
         }
 
-        
 
         private void LoadMinePortalsEvent(object sender, WarpedEventArgs e)
         {
@@ -175,7 +186,10 @@ namespace CustomPortalLocations
             if (mine.mineLevel == Game1.player.deepestMineLevel)
                 return;
 
+            // deepestMineLevel has changed
             LoadMinePortals();
+            // inform other players to reload portals
+            UpdateMultiplayerPortals();
         }
 
         private void LoadMinePortals()
@@ -198,7 +212,36 @@ namespace CustomPortalLocations
                 location.map.LoadTileSheets(Game1.mapDisplayDevice);
             }
 
-            // Reload Portal Locations
+            ReloadPortalLocations();
+            
+        }
+
+        private void LoadPortalSaves()
+        {
+            // Reads or Creates a Portal Gun save data file
+            LocationSaveFileName =
+                $"Data{Path.DirectorySeparatorChar}{Constants.SaveFolderName}.json";
+            // path/Data/SaveFolderName.json
+
+            if (File.Exists(LocationSaveFileName))
+            {
+                PortalLocations = Helper.Data.ReadJsonFile<NewPortalLocations>(LocationSaveFileName);
+                ReloadPortalLocations();
+            }
+            else
+            {
+                PortalLocations = new NewPortalLocations();
+                // Initialize portalLocation array with default items
+                for (int i = 0; i < NUM_OF_PORTALS; i++)
+                {
+                    PortalLocations.portalLocations[i] = new PortalLocation();
+                }
+                Helper.Data.WriteJsonFile(LocationSaveFileName, PortalLocations);
+            }
+        }
+
+        private void ReloadPortalLocations()
+        {
             for (int i = 0; i < NUM_OF_PORTALS; i++)
             {
                 if (PortalLocations.portalLocations[i].exists)
@@ -216,40 +259,46 @@ namespace CustomPortalLocations
                 }
             }
         }
-
-        private void LoadPortalSaves()
+        // send message to other players of updated json portal locations
+        private void UpdateMultiplayerPortals()
         {
-            // Reads or Creates a Portal Gun save data file
-            LocationSaveFileName =
-                $"{this.Helper.DirectoryPath}{Path.DirectorySeparatorChar}Data{Path.DirectorySeparatorChar}{Constants.SaveFolderName}.json";
+            NewPortalLocations message = PortalLocations;
+            this.Helper.Multiplayer.SendMessage(message, "SetPortalLocations", modIDs: new[] { this.ModManifest.UniqueID });
+            this.Monitor.Log("SENT updated portal json", LogLevel.Debug);
+        }
 
-            if (File.Exists(LocationSaveFileName))
+        private void RetractMultiplayerPortals(int portalIndex)
+        {
+            int message = portalIndex;
+            this.Helper.Multiplayer.SendMessage(message, "RetractPortals", modIDs: new[] { this.ModManifest.UniqueID });
+            this.Monitor.Log("SENT retract portal json", LogLevel.Debug);
+        }
+
+
+        // receive multiplayer mod messages
+        public void OnModMessageReceived(object sender, ModMessageReceivedEventArgs e)
+        {
+            // PortalLocations json updated
+            if (e.FromModID == "JoshJKe.PortalGun" && e.Type == "SetPortalLocations")
             {
-                PortalLocations = Helper.Data.ReadJsonFile<NewPortalLocations>(LocationSaveFileName);
-                for (int i = 0; i < NUM_OF_PORTALS; i++)
-                {
-                    if (PortalLocations.portalLocations[i].exists)
-                    {
-                        if (i % 2 == 0)
-                        {
-                            this.SetPortalLocation(i, i + 1, PortalLocations.portalLocations[i]);
-                        }
-                        else
-                        {
-                            this.SetPortalLocation(i, i - 1, PortalLocations.portalLocations[i]);
-                        }
-                    }
-                }
-            }
-            else
-            {
-                PortalLocations = new NewPortalLocations();
-                // Initialize portalLocation array with default items
-                for (int i = 0; i < NUM_OF_PORTALS; i++)
-                {
-                    PortalLocations.portalLocations[i] = new PortalLocation();
-                }
+
+                NewPortalLocations message = e.ReadAs<NewPortalLocations>();
+                // handle message fields here
+                PortalLocations = message;
                 Helper.Data.WriteJsonFile(LocationSaveFileName, PortalLocations);
+                ReloadPortalLocations();
+                this.Monitor.Log("RECEIVED updated portal json", LogLevel.Debug);
+            }
+
+            else if (e.FromModID == "JoshJKe.PortalGun" && e.Type == "RetractPortals")
+            {
+
+                int portalIndex = e.ReadAs<int>();
+                // handle message fields here
+                RetractPortals(portalIndex);
+                //Helper.Data.WriteJsonFile(LocationSaveFileName, PortalLocations);
+                //ReloadPortalLocations();
+                this.Monitor.Log("RECEIVED remove portal json", LogLevel.Debug);
             }
         }
 
@@ -289,34 +338,42 @@ namespace CustomPortalLocations
             if (e.Button.ToString().ToLower() == this.config.RetractPortals.ToLower())
             {
                 int portalIndex = GetPortalIndex();
-                if (portalIndex == -1)
-                {
-                    return;
-                }
-                else
-                {
-                    // Remove the tiles
-                    RemovePortalTile(portalIndex);
-                    RemovePortalTile(portalIndex + 1);
-                    // Remove the warps
-                    RemoveCurrentPortalWarps(portalIndex, portalIndex + 1);
-                    // Reset the portalLocations
-                    PortalLocations.portalLocations[portalIndex] = new PortalLocation();
-                    PortalLocations.portalLocations[portalIndex + 1] = new PortalLocation();
-                    // Reset the warpLocations
-                    PortalWarpLocations[portalIndex] = null;
-                    PortalWarpLocations[portalIndex + 1] = null;
-                    // Reset the oldTiles
-                    OldTiles[portalIndex] = null;
-                    OldTiles[portalIndex + 1] = null;
-                    // Save portal status
-                    Helper.Data.WriteJsonFile(LocationSaveFileName, PortalLocations);
+                RetractPortals(portalIndex);
 
-                    // Animation for some indication other than sound
-                    Game1.switchToolAnimation();
+                RetractMultiplayerPortals(portalIndex);
+            }
+        }
 
-                    Game1.currentLocation.playSound("serpentDie");
-                }
+        private void RetractPortals(int portalIndex)
+        {
+            if (portalIndex == -1)
+            {
+                return; // no portals exist from this portal gun
+            }
+            else
+            {
+                // Remove the tiles
+                RemovePortalTile(portalIndex);
+                RemovePortalTile(portalIndex + 1);
+                // Remove the warps
+                RemoveCurrentPortalWarps(portalIndex, portalIndex + 1);
+                // Reset the portalLocations
+                PortalLocations.portalLocations[portalIndex] = new PortalLocation();
+                PortalLocations.portalLocations[portalIndex + 1] = new PortalLocation();
+                // Reset the warpLocations
+                PortalWarpLocations[portalIndex] = null;
+                PortalWarpLocations[portalIndex + 1] = null;
+                // Reset the oldTiles
+                OldTiles[portalIndex] = null;
+                OldTiles[portalIndex + 1] = null;
+                // Save portal status
+                Helper.Data.WriteJsonFile(LocationSaveFileName, PortalLocations);
+
+                // Animation for some indication other than sound
+                Game1.switchToolAnimation();
+
+                Game1.currentLocation.playSound("serpentDie");
+
             }
         }
 
@@ -394,6 +451,9 @@ namespace CustomPortalLocations
 
                 // Play sounds only when a new portalLocation is set
                 Game1.currentLocation.playSound("debuffSpell");
+
+                // inform other players to reload portals
+                UpdateMultiplayerPortals();
             }
         }
 
